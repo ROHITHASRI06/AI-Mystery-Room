@@ -149,3 +149,10 @@ Deployment is prepared for Vercel, Render, and MongoDB Atlas; this repository do
 5. Confirm the deployed UI can reach the Render health endpoint and exercise the complete game flow with valid services configured.
 
 Configure production secrets only in the respective provider dashboards. Vercel deployment requires access to the user's Vercel account; Render deployment requires access to the user's Render account; Atlas setup requires the user's MongoDB Atlas account. No deployment or external account changes are performed by these instructions.
+
+
+
+## 🚀 Live Demo
+
+**Try AI Mystery Room here:**  
+https://ai-mystery-room-green.vercel.app/
