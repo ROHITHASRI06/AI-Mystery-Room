@@ -4,10 +4,30 @@ import { createCaseRouter } from './routes/caseRoutes.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import { isDatabaseConnected } from './config/database.js';
 
+const defaultClientOrigins = [
+  'http://127.0.0.1:5173',
+  'https://ai-mystery-room-green.vercel.app',
+];
+
+function getAllowedClientOrigins() {
+  const configuredOrigins = (process.env.CLIENT_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return new Set([...defaultClientOrigins, ...configuredOrigins]);
+}
+
 export function createApp(caseRouteOptions = {}) {
   const app = express();
+  const allowedClientOrigins = getAllowedClientOrigins();
 
-  app.use(cors({ origin: process.env.CLIENT_URL || 'http://127.0.0.1:5173' }));
+  app.use(cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, false);
+      return callback(null, allowedClientOrigins.has(origin) ? origin : false);
+    },
+  }));
   app.use(express.json({ limit: '16kb' }));
 
   app.get('/api/health', (_request, response) => {

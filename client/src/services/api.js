@@ -1,7 +1,23 @@
 import axios from 'axios';
 
-const configuredUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000').replace(/\/$/, '');
-const baseURL = configuredUrl.endsWith('/api') ? configuredUrl : `${configuredUrl}/api`;
+const LOCAL_API_URL = 'http://127.0.0.1:5000';
+const PRODUCTION_API_URL = 'https://ai-mystery-room.enzonic.dev';
+const configuredUrl = (import.meta.env.VITE_API_URL || '').trim();
+
+function isLoopbackUrl(value) {
+  try {
+    return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
+
+const fallbackUrl = import.meta.env.PROD ? PRODUCTION_API_URL : LOCAL_API_URL;
+const selectedUrl = !configuredUrl || (import.meta.env.PROD && isLoopbackUrl(configuredUrl))
+  ? fallbackUrl
+  : configuredUrl;
+const configuredApiUrl = selectedUrl.replace(/\/$/, '');
+const baseURL = configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`;
 
 const http = axios.create({
   baseURL,

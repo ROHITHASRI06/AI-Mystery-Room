@@ -64,6 +64,34 @@ describe('API foundation', () => {
     assert.equal(response.headers.get('access-control-allow-origin'), 'http://127.0.0.1:5173');
   });
 
+  it('allows the deployed Vercel origin through CORS', async () => {
+    const response = await fetch(`${baseUrl}/api/health`, {
+      headers: { origin: 'https://ai-mystery-room-green.vercel.app' },
+    });
+    assert.equal(response.headers.get('access-control-allow-origin'), 'https://ai-mystery-room-green.vercel.app');
+  });
+
+  it('allows a Vercel preflight for case creation', async () => {
+    const response = await fetch(`${baseUrl}/api/cases`, {
+      method: 'OPTIONS',
+      headers: {
+        origin: 'https://ai-mystery-room-green.vercel.app',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    });
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get('access-control-allow-origin'), 'https://ai-mystery-room-green.vercel.app');
+    assert.match(response.headers.get('access-control-allow-methods') || '', /POST/);
+  });
+
+  it('does not allow an unrelated browser origin through CORS', async () => {
+    const response = await fetch(`${baseUrl}/api/health`, {
+      headers: { origin: 'https://unrelated.example' },
+    });
+    assert.equal(response.headers.get('access-control-allow-origin'), null);
+  });
+
   it('returns a structured 404 for unknown routes', async () => {
     const response = await fetch(`${baseUrl}/api/unknown`);
     assert.equal(response.status, 404);
