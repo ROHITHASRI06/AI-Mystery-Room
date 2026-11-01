@@ -272,8 +272,8 @@ function generatedMystery(difficulty) {
 }
 
 describe('Gemini generation', () => {
-  it('uses the 180-second provider timeout and logs only sanitized generation diagnostics', async () => {
-    assert.equal(GEMINI_REQUEST_TIMEOUT_MS, 180_000);
+  it('uses a bounded provider timeout and logs only sanitized generation diagnostics', async () => {
+    assert.equal(GEMINI_REQUEST_TIMEOUT_MS, 150_000);
     const events = [];
     const logger = {
       info: (message, details) => events.push({ level: 'info', message, details }),
@@ -290,6 +290,7 @@ describe('Gemini generation', () => {
 
     assert.equal(events.length, 2);
     assert.equal(events[0].message, 'Gemini mystery generation started');
+    assert.equal(events[0].details.model, 'gemini-test-model');
     assert.equal(events[0].details.startedAt.length > 0, true);
     assert.equal(events[1].message, 'Gemini mystery generation failed');
     assert.equal(events[1].details.failureKind, 'provider_request');
@@ -336,6 +337,7 @@ describe('Gemini generation', () => {
 
     assert.equal(observedRequests.length, 3);
     assert.ok(observedRequests.every((request) => request.config.responseMimeType === 'application/json'));
+    assert.ok(observedRequests.every((request) => request.config.thinkingConfig.thinkingLevel === 'low'));
     assert.ok(observedRequests[0].contents.includes('exactly 3 suspects, 5 clues, and 2 progressively helpful hints'));
     assert.ok(observedRequests[2].contents.includes('exactly 5 suspects, 9 clues, and 3 progressively helpful hints'));
     assert.equal(observedRequests[0].config.responseJsonSchema.properties.suspects.minItems, 3);

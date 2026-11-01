@@ -5,6 +5,7 @@ import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import { isDatabaseConnected } from './config/database.js';
 
 const defaultClientOrigins = [
+  'http://localhost:5173',
   'http://127.0.0.1:5173',
   'https://ai-mystery-room-green.vercel.app',
 ];
@@ -31,10 +32,11 @@ export function createApp(caseRouteOptions = {}) {
   app.use(express.json({ limit: '16kb' }));
 
   app.get('/api/health', (_request, response) => {
-    response.status(isDatabaseConnected() ? 200 : 503).json({
-      status: isDatabaseConnected() ? 'ok' : 'degraded',
+    const databaseConnected = isDatabaseConnected();
+    response.status(databaseConnected ? 200 : 503).json({
+      status: databaseConnected ? 'ok' : 'degraded',
       service: 'ai-mystery-room-api',
-      database: isDatabaseConnected() ? 'connected' : 'disconnected',
+      database: databaseConnected ? 'connected' : 'disconnected',
     });
   });
 

@@ -27,7 +27,7 @@ const http = axios.create({
 
 export const caseApi = {
   async createCase(payload) {
-    const { data } = await http.post('/cases', payload, { timeout: 180_000 });
+    const { data } = await http.post('/cases', payload, { timeout: 165_000 });
     return data.case;
   },
   async getCase(caseId) {

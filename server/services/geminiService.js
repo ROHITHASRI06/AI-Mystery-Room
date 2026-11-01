@@ -4,7 +4,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { DIFFICULTY_CONFIG } from '../utils/difficulty.js';
 import { buildMysteryJsonSchema, buildMysterySchema } from './mysterySchema.js';
 
-export const GEMINI_REQUEST_TIMEOUT_MS = 180_000;
+export const GEMINI_REQUEST_TIMEOUT_MS = 150_000;
 
 function sanitizeProviderError(error) {
   const status = Number(error?.status ?? error?.statusCode);
@@ -24,6 +24,7 @@ function sanitizeProviderError(error) {
   else if (status >= 500) category = 'provider_server_error';
   else if (status >= 400) category = 'provider_request_rejected';
   else if (networkCategories[providerCode]) category = networkCategories[providerCode];
+  else if (['ECONNABORTED', 'UND_ERR_CONNECT_TIMEOUT'].includes(providerCode) || ['ABORTERROR', 'TIMEOUTERROR'].includes(String(error?.name || '').toUpperCase())) category = 'provider_timeout';
 
   const safe = { category };
   if (Number.isInteger(status) && status >= 100 && status <= 599) safe.status = status;
@@ -85,7 +86,7 @@ export function createGeminiService({
       else logger.error('Gemini mystery generation failed', event);
     };
 
-    logger.info('Gemini mystery generation started', { difficulty: safeDifficulty, startedAt });
+    logger.info('Gemini mystery generation started', { difficulty: safeDifficulty, model, startedAt });
 
     let response;
     try {
@@ -96,11 +97,18 @@ export function createGeminiService({
         config: {
           responseMimeType: 'application/json',
           responseJsonSchema: buildMysteryJsonSchema(difficulty),
+          thinkingConfig: { thinkingLevel: 'low' },
         },
       });
     } catch (error) {
       logCompletion('failed', { failureKind: 'provider_request', providerError: sanitizeProviderError(error) });
-      throw new ApiError(502, 'Mystery generation failed. Please try again.', 'GEMINI_REQUEST_FAILED');
+      const providerError = sanitizeProviderError(error);
+      const timedOut = providerError.category === 'provider_timeout' || providerError.category === 'network_timeout';
+      throw new ApiError(
+        502,
+        timedOut ? 'Mystery generation timed out. Please try again.' : 'Mystery generation failed. Please try again.',
+        timedOut ? 'GEMINI_REQUEST_TIMEOUT' : 'GEMINI_REQUEST_FAILED',
+      );
     }
 
     if (typeof response?.text !== 'string' || response.text.trim().length === 0) {

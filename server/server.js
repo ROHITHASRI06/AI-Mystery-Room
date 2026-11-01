@@ -8,11 +8,9 @@ configureDnsServers();
 const app = createApp();
 const port = Number(process.env.PORT) || 5000;
 
-try {
-  await connectDatabase();
-} catch (error) {
-  console.warn(`MongoDB is not connected: ${error.message}`);
-}
+// Do not advertise a ready API when every case route will reject on database state.
+// Let the hosting platform restart the process and retry the initial connection.
+await connectDatabase();
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`AI Mystery Room API listening on port ${port}`);
